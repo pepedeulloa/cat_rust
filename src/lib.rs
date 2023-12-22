@@ -1,5 +1,5 @@
 pub mod config {
- use std::{path::PathBuf, io::BufReader, error::Error, fs::File};
+ use std::{path::PathBuf, io::{BufReader, BufRead}, error::Error, fs::File};
 
  use clap::Parser;
  
@@ -37,14 +37,32 @@ pub mod config {
   Ok(reader)
  }
 
- pub fn output(line: String, line_number: usize, enum_lines: bool, enum_nonblank_lines: bool, line_end: bool) {
-  if enum_lines {
-   println!("{}\t{}", line_number + 1, line);
-  } else if enum_nonblank_lines && !line.is_empty() {
-   println!("{}\t{}", line_number + 1, line);
-  } else if line_end {
+ pub fn run_file(reader: BufReader<File>, line_pos: bool, line_pos_nonblank: bool, line_end: bool) {
+  // Counter for non blank lines option
+  let mut num = 0;
+
+  for (number, line) in reader.lines().enumerate(){
+   if !line.as_ref().unwrap().is_empty() && line_pos_nonblank {
+    num += 1;
+    output(line.unwrap(), num, true, line_end);
+   } else if line_pos {
+     output(line.unwrap(), number, true, line_end);
+   } else if line_end {
+    output(line.unwrap(), 0, false, line_end);
+   } else {
+    output(line.unwrap(), 0, line_pos, line_end)
+   }
+  }
+ }
+
+ pub fn output(line: String, line_number: usize, enum_lines: bool, line_end: bool) {
+  
+  if line_end {
    println!("{}{}", line,'$')
-  } else {
+  } else if enum_lines {
+   println!("{}\t{}", line_number, line);
+  }
+  else {
    println!("{}", line);
   }
  }
